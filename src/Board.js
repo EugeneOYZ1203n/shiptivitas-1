@@ -21,6 +21,7 @@ export default class Board extends React.Component {
       complete: React.createRef(),
     }
   }
+  
   getClients() {
     return [
       ['1','Stark, White and Abbott','Cloned Optimal Architecture', 'in-progress'],
@@ -74,5 +75,58 @@ export default class Board extends React.Component {
         </div>
       </div>
     );
+  }
+
+  componentDidMount() {
+    let options = {}
+    let swimlanesArr = Object.values(this.swimlanes).map(el=>el.current)
+    this.drake = Dragula(swimlanesArr, options)
+      .on('drop', (el, target, src, sibling) => {
+        console.log(el,target, src, sibling)
+        this.updateClient(el,target, sibling)
+      })
+  }
+
+  componentWillUnmount() {
+    this.drake.remove()
+  }
+
+  updateClient(el, target, sibling) {
+    //Revert DOM Changes from dracula
+    this.drake.cancel(true)
+
+    const newSwimlane = (
+      target === this.swimlanes.backlog.current ? 'backlog' 
+      :target === this.swimlanes.inProgress.current ? 'in-progress'
+      :target === this.swimlanes.complete.current ? 'complete'
+      :'backlog'
+    );
+
+    const clientsList = [
+      ...this.state.clients.backlog,
+      ...this.state.clients.inProgress,
+      ...this.state.clients.complete
+    ];
+
+    const moved = clientsList.find(cli=>cli.id===el.dataset.id);
+    const movedUpdated = {
+      ...moved,
+      status: newSwimlane
+    }
+    const updatedClients = clientsList.filter(cli=>cli.id!==el.dataset.id)
+
+    if (sibling !== null){
+      const siblingIndex = clientsList.findIndex(cli=>cli.id===sibling.dataset.id)
+      updatedClients.splice(siblingIndex, 0, movedUpdated)
+    }
+    else {
+      updatedClients.push(movedUpdated)
+    }
+
+    this.setState({"clients": {
+      backlog: updatedClients.filter(client => !client.status || client.status === 'backlog'),
+      inProgress: updatedClients.filter(client => client.status && client.status === 'in-progress'),
+      complete: updatedClients.filter(client => client.status && client.status === 'complete'),
+    }})
   }
 }
