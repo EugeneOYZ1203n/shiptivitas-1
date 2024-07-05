@@ -21,6 +21,7 @@ export default class Board extends React.Component {
       complete: React.createRef(),
     }
   }
+  
   getClients() {
     return [
       ['1','Stark, White and Abbott','Cloned Optimal Architecture', 'in-progress'],
@@ -74,5 +75,27 @@ export default class Board extends React.Component {
         </div>
       </div>
     );
+  }
+
+  componentDidMount() {
+    let options = {};
+    let swimlanesArr = Object.values(this.swimlanes).map(el=>el.current)
+    Dragula(swimlanesArr, options)
+      .on('drop', (el, target, src, sibling) => {
+        let newStatus = (
+          target === this.swimlanes.backlog.current ? 'backlog' 
+          :target === this.swimlanes.inProgress.current ? 'in-progress'
+          :target === this.swimlanes.complete.current ? 'complete'
+          :'backlog'
+        )
+        let newClass = (
+          target === this.swimlanes.backlog.current ? 'grey' 
+          :target === this.swimlanes.inProgress.current ? 'blue'
+          :target === this.swimlanes.complete.current ? 'green'
+          :'backlog'
+        )
+        el.setAttribute("class", "Card gu-transit Card-" + newClass)
+        el.setAttribute("data-status", newStatus)
+      })
   }
 }
